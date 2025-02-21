@@ -1,0 +1,12 @@
+---
+description: 
+globs: frontend/*
+---
+
+# Your rule content
+
+- Frontend for this application is using pure HTML with AlpineJS, no react. 
+- /frontend/static/templates* contain dynamically loaded partial HTML templates for rendered conditionally shown components
+- /frontend/static/js/components/*.js contain Javascript for these components
+- Main HTML is [index.html](mdc:frontend/index.html) main Javascript is [app.js](mdc:frontend/static/js/app.js)
+- Only tailwind CSS (already enabled and works), no hardcoded CSS

@@ -1,0 +1,37 @@
+# MacOS system files
+.DS_Store
+~$*
+
+# Windows system files
+Thumbs.db
+
+# Environment variables file
+.env
+
+# Logs and temporary files
+*.log
+*.tmp
+
+# Ignore any virtual environment at the root (if any)
+venv/
+.venv/
+
+*.pptx
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Pytest cache
+.pytest_cache/
+
+# MyPy cache
+.mypy_cache/
+
+
+# Front-End Dependency directories
+node_modules/
+
+# Front-End build output
+build/

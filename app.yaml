@@ -1,0 +1,26 @@
+command: [
+  "uvicorn",
+  "backend.main:app",
+  "--host",
+  "0.0.0.0",
+  "--port",
+  "8000"
+]
+
+env:
+  - name: "WORKSPACE_GIT_FOLDER_PATH"
+    value: "/Workspace/Repos/your-repo-path"                       
+      # Adjust this path locally and point to a Git Folder with Job Definition files
+
+  - name: "RESOURCE_NAME_MAPPINGS_FILE_PATH"
+    value: "/Workspace/dbr-workflow-jobs-sync-app.config.json"     
+      # Adjust this path locally and point to a file where you will configure resource mappings for Jobs Imports
+      
+  - name: "NUM_THREADS"
+    value: "1"                                                     
+      # Adjust to 4-6 to accelerate processing of large number of jobs if API Rate Limits allow.
+      # Reduce concurrency if you experience freezes and timeouts.
+
+  - name: "APP_MODE"
+    value: "Both"                                                  
+      # Possible values: Export, Import, Both. Use this to safeguard environments and prevent mistakes.

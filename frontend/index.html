@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Databricks Workspace Manager</title>
+    <link rel="icon" type="image/png" href="static/images/favicon.png">
+
+    <!-- App JS -->
+    <script src="static/js/app.js"></script>
+    
+    <!-- Alpine.js -->
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script src="static/js/components/workspace-info.js"></script>
+    <script src="static/js/components/export-task.js"></script>
+    <script src="static/js/components/import-workflow.js"></script>
+    <script src="static/js/components/import-validation-task.js"></script>
+    <script src="static/js/components/import-task.js"></script>
+    <script src="static/js/components/delete-task.js"></script>
+    <script src="static/js/components/export-workflow.js"></script>
+
+    <style>
+        [x-cloak] {
+            display: none !important;
+        }
+        
+        /* Prevent flash of wrong theme */
+        html.dark {
+            color-scheme: dark;
+        }
+        
+        @media (prefers-color-scheme: dark) {
+            html:not(.light) {
+                color-scheme: dark;
+            }
+        }
+    </style>
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    // You can add custom colors here if needed
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-100 dark:bg-gray-900">
+    <div class="container mx-auto px-4 py-8" 
+         x-data="workspaceManager()" 
+         x-init="init"
+         x-effect="darkMode ? document.documentElement.classList.add('dark') : document.documentElement.classList.remove('dark')">
+
+        <!-- Add this near the top of your container div -->
+        <button @click="toggleDarkMode()" 
+                class="fixed top-4 right-4 p-2 rounded-lg bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 transition-colors duration-200">
+            <!-- Sun icon -->
+            <svg x-show="!darkMode" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
+            </svg>
+            <!-- Moon icon -->
+            <svg x-show="darkMode" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+            </svg>
+        </button>
+
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold mb-4 text-gray-800 dark:text-gray-100">Databricks Workflow Jobs Synchronizer</h1>
+            
+            <!-- Mode Description Box with Integrated Switch -->
+            <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md mx-auto mb-8 w-[800px] transition-colors duration-200">
+                <!-- Mode Switch -->
+                <div class="flex items-center justify-center gap-8 mb-6">
+                    <div class="flex items-center gap-4">
+                        <h2 class="text-xl font-semibold" 
+                            :class="syncMode === 'export' ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-400 dark:text-gray-500'">
+                            Export Mode
+                        </h2>
+                        
+                        <!-- Toggle Switch -->
+                        <button 
+                            class="relative inline-flex h-8 w-14 items-center rounded-full transition-colors duration-200 ease-in-out"
+                            :class="[
+                                syncMode === 'export' ? 'bg-gray-200 dark:bg-gray-600' : 'bg-blue-600 dark:bg-blue-500',
+                                !allowModeToggle ? 'opacity-50 cursor-not-allowed' : ''
+                            ]"
+                            @click="allowModeToggle && toggleSyncMode(); allowModeToggle && saveSyncModePreference()"
+                            :disabled="!allowModeToggle">
+                            <span class="sr-only">Toggle Mode</span>
+                            <span
+                                class="inline-block h-6 w-6 transform rounded-full transition duration-200 ease-in-out shadow-md"
+                                :class="[
+                                    'bg-white dark:bg-gray-200',
+                                    syncMode === 'export' ? 'translate-x-1' : 'translate-x-7'
+                                ]">
+                            </span>
+                        </button>
+                        
+                        <h2 class="text-xl font-semibold" 
+                            :class="syncMode === 'import' ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400 dark:text-gray-500'">
+                            Import Mode
+                        </h2>
+                    </div>
+                </div>
+
+                <!-- Mode Description -->
+                <template x-if="syncMode === 'export'">
+                    <div class="text-center">
+                        <p class="text-gray-600 dark:text-gray-300">
+                            Export workflow job definitions from Workspace Workflows to a Git-enabled folder as JSON files.<br/>
+                            Used when packaging configurations from DEV environment.
+                        </p>
+                    </div>
+                </template>
+                
+                <template x-if="syncMode === 'import'">
+                    <div class="text-center">
+                        <p class="text-gray-600 dark:text-gray-300">
+                            Import workflow job definitions from a Git-enabled Workspace folder to Workspace Workflows.<br/>
+                            Used when promoting configurations to PROD environment.
+                        </p>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+        <!-- Workflow Components Container -->
+        <div class="workflow-components mb-8">
+            <!-- Export Workflow -->
+            <div x-data="exportWorkflow()" 
+                 x-show="syncMode === 'export' && !activeOperation"
+                 x-html="template"
+                 class="mx-auto"
+                 x-cloak>
+            </div>
+
+            <!-- Import Workflow -->
+            <div x-data="importWorkflow()" 
+                 x-show="syncMode === 'import' && !activeOperation"
+                 x-html="template"
+                 class="mx-auto"
+                 x-cloak>
+            </div>
+        </div>
+
+        <!-- Workspace Info Container -->
+        <div class="workspace-info-container">
+            <div x-data="workspaceInfo()" 
+                 x-html="template"
+                 x-cloak>
+            </div>
+        </div>
+
+        <!-- Git Operation Popup -->
+        <div x-show.important="showGitPopup"
+             x-cloak
+             x-transition
+             class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 max-w-md w-full mx-4" @click.outside="closeGitPopup">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                        <span x-text="gitAction === 'pull' ? 'Pull Latest Changes' : 'Push Changes'"></span>
+                    </h3>
+                    <button @click="closeGitPopup" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                
+                <p class="text-gray-600 dark:text-gray-300 mb-4">
+                    This operation needs to be performed using Databricks' built-in Git interface. 
+                    Would you like to open it now?
+                </p>
+
+                <div class="flex justify-end space-x-3">
+                    <button @click="closeGitPopup" 
+                            class="px-4 py-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100">
+                        Cancel
+                    </button>
+                    <button @click="openInDatabricks" 
+                            class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700">
+                        Open in Databricks
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="fixed bottom-0 left-0 w-full py-4 bg-white dark:bg-gray-800 shadow-md transition-colors duration-200">
+        <div class="container mx-auto text-center text-gray-600 dark:text-gray-300">
+            by <a href="https://t1a.com" class="text-blue-600 dark:text-blue-400 hover:underline" target="_blank" rel="noopener noreferrer">Tier One Analytics</a>, 2025
+        </div>
+    </footer>
+</body>
+</html> 

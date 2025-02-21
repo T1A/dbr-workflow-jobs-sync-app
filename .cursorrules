@@ -1,0 +1,1 @@
+This is an utility app facilitating synchronization of Databricks Worklow Job Definitions between Databricks Workspace and Git-Enabled Folders for purposes of version control and promoting job definitions between environments

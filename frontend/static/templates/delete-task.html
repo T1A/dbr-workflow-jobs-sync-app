@@ -1,0 +1,108 @@
+<div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mx-auto" style="width: 800px">
+    <h2 class="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-200">Remove Deleted Jobs</h2>
+    
+    <div class="mt-4 space-y-4">
+        <!-- Status Header -->
+        <h3 class="font-medium text-gray-700 dark:text-gray-300">
+            Jobs Removal Status: 
+            <span x-text="deleteStatus === 'completed' ? 'Completed' : 
+                          deleteStatus === 'completed_with_errors' ? 'Completed (with errors)' : 
+                          deleteStatus === 'running' ? 'Running' : 
+                          deleteStatus === 'failed' && deleteOutput ? 'Failed: ' + deleteOutput : 
+                          deleteStatus === 'failed' ? 'Failed' : 
+                          deleteStatus"
+                  :class="{
+                      'text-yellow-600 dark:text-yellow-400': deleteStatus === 'running',
+                      'text-green-600 dark:text-green-400': deleteStatus === 'completed',
+                      'text-amber-600 dark:text-amber-400': deleteStatus === 'completed_with_errors',
+                      'text-red-600 dark:text-red-400': deleteStatus === 'failed',
+                      'text-gray-600 dark:text-gray-400': deleteStatus === 'idle'
+                  }">
+            </span>
+        </h3>
+
+        <!-- Progress Stats -->
+        <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 border dark:border-gray-600">
+            <div class="flex justify-between mb-2">
+                <div class="text-sm font-medium text-gray-600">
+                    Progress: <span x-text="progressStats.deleted + progressStats.failed"></span>/<span x-text="progressStats.total"></span> jobs
+                </div>
+                <div class="text-sm font-medium">
+                    <span class="text-amber-600" x-text="progressStats.deleted + '/' + progressStats.jobsToDelete + ' deleted'"></span>
+                    <span class="text-gray-400 mx-2">|</span>
+                    <span class="text-red-600" x-text="progressStats.failed + ' failed to delete'"></span>
+                </div>
+            </div>
+            
+            <!-- Progress Bar -->
+            <div class="w-full bg-gray-200 rounded-full h-2.5 mb-2">
+                <div class="h-2.5 rounded-full transition-all duration-500"
+                     :style="'width: ' + progressStats.percentComplete + '%'"
+                     :class="{
+                         'bg-yellow-400': deleteStatus === 'running',
+                         'bg-green-500': deleteStatus === 'completed',
+                         'bg-amber-500': deleteStatus === 'completed_with_errors',
+                         'bg-red-500': deleteStatus === 'failed'
+                     }">
+                </div>
+            </div>
+        </div>
+
+        <!-- Job Delete Statuses Section -->
+        <div class="border dark:border-gray-600 rounded-lg overflow-hidden">
+            <button @click="showJobStatuses = !showJobStatuses"
+                    class="w-full px-4 py-2 text-left bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 flex justify-between items-center">
+                <span class="font-medium text-gray-700 dark:text-gray-300">Job Removal Statuses</span>
+                <svg :class="{'rotate-180': showJobStatuses}" class="w-5 h-5 transform transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                </svg>
+            </button>
+            <div x-show="showJobStatuses" class="divide-y divide-gray-100 dark:divide-gray-700">
+                <template x-for="(job, index) in jobDeleteStatuses
+                    .filter(job => job.deleteStatus !== 'skipped')
+                    .sort((a, b) => a.jobName.localeCompare(b.jobName))" 
+                    :key="index">
+                    <div class="px-3 py-2 hover:bg-gray-50">
+                        <div class="flex justify-between items-center">
+                            <span class="font-medium text-sm" x-text="job.jobName"></span>
+                            <span :class="{
+                                'px-1.5 py-0.5 rounded text-xs font-medium': true,
+                                'bg-green-100 text-green-800': job.deleteStatus === 'completed',
+                                'bg-yellow-100 text-yellow-800': job.deleteStatus === 'in_progress',
+                                'bg-red-100 text-red-800': job.deleteStatus === 'error'
+                            }" x-text="(() => {
+                                switch(job.deleteStatus) {
+                                    case 'completed': return 'Removed';
+                                    case 'in_progress': return 'In Progress';
+                                    case 'error': return 'Failed';
+                                    default: return job.deleteStatus;
+                                }
+                            })()"></span>
+                        </div>
+                        <!-- Show error message if job failed -->
+                        <template x-if="job.deleteStatus === 'error' && job.errorMessage">
+                            <div class="mt-1">
+                                <p class="text-xs text-red-600" x-text="job.errorMessage"></p>
+                            </div>
+                        </template>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+        <!-- Log Section -->
+        <div class="border dark:border-gray-600 rounded-lg overflow-hidden">
+            <button @click="showLog = !showLog"
+                    class="w-full px-4 py-2 text-left bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 flex justify-between items-center">
+                <span class="font-medium text-gray-700 dark:text-gray-300">Detailed Log</span>
+                <svg :class="{'rotate-180': showLog}" class="w-5 h-5 transform transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                </svg>
+            </button>
+            <div x-show="showLog" class="border-t dark:border-gray-600">
+                <pre class="w-full h-40 p-3 font-mono text-xs bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200 overflow-auto whitespace-pre-wrap"
+                     x-text="logRecords.join('\n')"></pre>
+            </div>
+        </div>
+    </div>
+</div> 

@@ -1,0 +1,107 @@
+<div class="bg-white dark:bg-gray-800 rounded-lg shadow-md my-6 mx-auto" style="width: 800px">
+    <!-- Header with toggle button -->
+    <button @click="isExpanded = !isExpanded"
+            class="w-full px-6 py-4 text-left flex justify-between items-center text-gray-800 dark:text-gray-200">
+        <h2 class="text-xl font-semibold">Workspace Information</h2>
+        <svg :class="{'rotate-180': isExpanded}" 
+             class="w-5 h-5 transform transition-transform duration-200" 
+             fill="none" 
+             stroke="currentColor" 
+             viewBox="0 0 24 24">
+            <path stroke-linecap="round" 
+                  stroke-linejoin="round" 
+                  stroke-width="2" 
+                  d="M19 9l-7 7-7-7"/>
+        </svg>
+    </button>
+
+    <!-- Content section -->
+    <div x-show="isExpanded" 
+         x-collapse.duration.300ms
+         class="px-6 pb-6">
+        <div x-show="loading && !workspaceInfo" class="text-gray-600 dark:text-gray-400">Loading...</div>
+        
+        <!-- Error Alert -->
+        <div x-show="error" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4" role="alert">
+            <span x-text="error"></span>
+        </div>
+        
+        <dl class="grid grid-cols-1 gap-4">
+            <div class="flex">
+                <dt class="font-medium text-gray-600 dark:text-gray-400 w-48">Databricks URL:</dt>
+                <dd class="text-gray-800 dark:text-gray-200">
+                    <a x-text="workspaceInfo?.databricks_host || 'Loading...'"
+                       x-bind:href="workspaceInfo?.databricks_host"
+                       class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
+                       target="_blank"></a>
+                </dd>
+            </div>
+            <div class="flex">
+                <dt class="font-medium text-gray-600 dark:text-gray-400 w-48">Git Folder:</dt>
+                <dd x-text="workspaceInfo?.workspace_git_folder || 'Loading...'" 
+                    class="text-gray-800 dark:text-gray-200"></dd>
+            </div>
+            <div class="flex">
+                <dt class="font-medium text-gray-600 dark:text-gray-400 w-48">JSON Files Status:</dt>
+                <dd class="text-gray-800 dark:text-gray-200">
+                    <template x-if="workspaceInfo?.json_files_count !== undefined && workspaceInfo?.workspace_last_modified">
+                        <span>
+                            <span x-text="workspaceInfo.json_files_count"></span> JSON files, 
+                            last modified <span x-text="workspaceInfo.workspace_last_modified"></span>
+                        </span>
+                    </template>
+                    <template x-if="!(workspaceInfo?.json_files_count !== undefined && workspaceInfo?.workspace_last_modified)">
+                        <span>Loading...</span>
+                    </template>
+                </dd>
+            </div>
+            <div class="flex">
+                <dt class="font-medium text-gray-600 dark:text-gray-400 w-48">Workflow Jobs Count:</dt>
+                <dd class="text-gray-800 dark:text-gray-200">
+                    <template x-if="workspaceInfo?.workflow_jobs_count">
+                        <span>
+                            <span x-text="workspaceInfo.workflow_jobs_count"></span> Jobs, last modified unknown (no API available)
+                        </span>
+                    </template>
+                    <template x-if="!(workspaceInfo?.workflow_jobs_count)">
+                        <span>Loading...</span>
+                    </template>
+                </dd>
+            </div>
+            <div class="flex">
+                <dt class="font-medium text-gray-600 dark:text-gray-400 w-48">Compute Mappings:</dt>
+                <dd class="text-gray-800 dark:text-gray-200">
+                    <template x-if="workspaceInfo?.mappings_file_path">
+                        <div class="flex items-center gap-2">
+                            <span x-text="workspaceInfo.mappings_file_path"></span>
+                            <button @click="computeMappingsExpanded = !computeMappingsExpanded"
+                                    class="flex items-center text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300">
+                                <span x-text="computeMappingsExpanded ? 'Hide' : 'Show'"></span>
+                                <svg :class="{'rotate-180': computeMappingsExpanded}" 
+                                     class="w-4 h-4 ml-1 transform transition-transform duration-200" 
+                                     fill="none" 
+                                     stroke="currentColor" 
+                                     viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" 
+                                          stroke-linejoin="round" 
+                                          stroke-width="2" 
+                                          d="M19 9l-7 7-7-7"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </template>
+                    <template x-if="!workspaceInfo?.mappings_file_path">
+                        <span>Loading...</span>
+                    </template>
+                    
+                    <div x-show="computeMappingsExpanded"
+                         x-collapse.duration.300ms
+                         class="mt-2 bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                        <pre class="text-sm overflow-auto dark:text-gray-300"
+                             x-text="JSON.stringify(workspaceInfo.compute_mappings, null, 2)"></pre>
+                    </div>
+                </dd>
+            </div>
+        </dl>
+    </div>
+</div> 
